@@ -1,41 +1,63 @@
 import './App.css';
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useState, Fragment ,Suspense} from 'react'
 import Gallery from './components/Gallery'
 import About from './components/About';
 import SearchBar from './components/SearchBar'
+import Spinner from './components/Spinner'
 import { BrowserRouter as Router ,Routes ,Route, Link } from 'react-router-dom';
 import { StyleContext } from './contexts/StyleContext';
-import { useState, Suspense, useRef } from 'react';
+import { createResource as fetchData } from './helper'
 
 function App() {
   let [searchTerm, setSearchTerm] = useState('')
-  let [data, setData] = useState([])
+  let [data, setData] = useState(null)
   let [message, setMessage] = useState('Search for Music!')
 
   const aboutPageStyle = {
     "color":"white",
     "background-color":"blue"
   }
+  useEffect(() => {
+    if (searchTerm) {
+        setData(fetchData(searchTerm))
+    }
+}, [searchTerm])
 
   useEffect(() => {
     if (searchTerm) {
       document.title=`${searchTerm} Music`
-      const fetchData = async () => {
-        const response = await fetch(`https://itunes.apple.com/search?term=${searchTerm}`)
-        const resData = await response.json()
-        if(resData.results.length > 0) {
-          setData(resData.results)
-        } else {
-          setMessage('Not Found')
-        }
-      }
-      fetchData()
+      console.log(fetchData(searchTerm))
+      setData(fetchData(searchTerm))
+      
+      // const fetchData = async () => {
+      //   const response = await fetch(`https://itunes.apple.com/search?term=${searchTerm}`)
+      //   const resData = await response.json()
+      //   if(resData.results.length > 0) {
+      //     setData(resData.results)
+      //   } else {
+      //     setMessage('Not Found')
+      //   }
+      // }
+      // fetchData()
   }
+  else {
+    setMessage('Not Found')
+     }
   }, [searchTerm])
 
   const handleSearch = (e, term) => {
     e.preventDefault()
     setSearchTerm(term)
+  }
+
+  const renderGallery = () => {
+    if(data){
+      return (
+        <Suspense fallback={<Spinner />}>
+          <Gallery data={data} />
+        </Suspense>
+      )
+    }
   }
 
   return (
@@ -48,7 +70,7 @@ function App() {
             <Link to={'/about'}> About Page </Link>
             <hr />
             {message}
-            <Gallery data={data} />
+            {renderGallery()}
           </Fragment>
          }>
          </Route>
